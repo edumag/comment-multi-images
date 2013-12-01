@@ -95,7 +95,8 @@ class Comment_Multi_Image {
 			add_action( 'wp_enqueue_scripts', array( $this, 'add_scripts' ) );
 			
 			// Add the Upload input to the comment form
-			add_action( 'comment_form' , array( $this, 'add_image_upload_form' ) );
+			add_action( 'comment_form_field_comment' , array( $this, 'add_image_upload_form' ),10 );
+         // add_filter('comment_form_default_fields', array( $this, 'add_image_upload_form' ));
 			add_filter( 'wp_insert_comment', array( $this, 'save_comment_multi_image' ) );
 			add_filter( 'comments_array', array( $this, 'display_comment_multi_image' ) );
 			
@@ -405,12 +406,15 @@ class Comment_Multi_Image {
 	/**
 	 * Adds the comment image upload form to the comment form.
 	 *
-	 * @param	$post_id	The ID of the post on which the comment is being added.
+    * @param	$campos_formulario Array con los campos del formulario
 	 */
- 	function add_image_upload_form( $post_id ) {
+ 	function add_image_upload_form( $campo_comentario ) {
 
-      // @todo comprobar que el tipo de post esta dentro dentro de los tipos que tenemos
-      //       configurado.
+      global $post;
+
+      echo $campo_comentario;
+
+      $post_id = $post->ID;
 
       // Comprobar opción individual del post 
       if( 'disable' == get_post_meta( $post_id, 'comment_multi_image_toggle', true ) ) return ;
@@ -419,6 +423,7 @@ class Comment_Multi_Image {
       if ( ! empty($this->type_post) && ! in_array(get_post_type($post_id),$this->type_post) ) return ;
 
       $this->comment_multi_images_hook();
+
 
 		 
 	} // end add_image_upload_form
@@ -718,17 +723,24 @@ class Comment_Multi_Image {
       $scriptpath=COMMENTSMULTIIMAGES_DIR_URL.'js/';
 
       wp_enqueue_style ( 'jquery-ui-style', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/themes/base/jquery-ui.css' );
-      wp_enqueue_style ( 'jquery-image-gallery-style', 'http://blueimp.github.com/jQuery-Image-Gallery/css/jquery.image-gallery.min.css');
+      // wp_enqueue_style ( 'jquery-image-gallery-style', 'http://blueimp.github.com/jQuery-Image-Gallery/css/jquery.image-gallery.min.css');
       wp_enqueue_style ( 'jquery-fileupload-ui-style', $stylepath . 'jquery.fileupload-ui.css');
       wp_enqueue_script ( 'enable-html5-script', 'http://html5shim.googlecode.com/svn/trunk/html5.js');
-      if(!wp_script_is('jquery')) {
-         wp_enqueue_script ( 'jquery', '//ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js',array(),'',false);
-      }
-      wp_enqueue_script ( 'jquery-ui-script', '//ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/jquery-ui.min.js',array('jquery'),'',true);
-      wp_enqueue_script ( 'tmpl-script', 'http://blueimp.github.com/JavaScript-Templates/tmpl.min.js',array('jquery'),'',true);
-      wp_enqueue_script ( 'load-image-script', 'http://blueimp.github.com/JavaScript-Load-Image/load-image.min.js',array('jquery'),'',true);
-      wp_enqueue_script ( 'canvas-to-blob-script', 'http://blueimp.github.com/JavaScript-Canvas-to-Blob/canvas-to-blob.min.js',array('jquery'),'',true);
-      wp_enqueue_script ( 'jquery-image-gallery-script', 'http://blueimp.github.com/jQuery-Image-Gallery/js/jquery.image-gallery.min.js',array('jquery'),'',true);
+
+      // if(!wp_script_is('jquery')) {
+      //    wp_enqueue_script ( 'jquery', '//ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js',array(),'',false);
+      // }
+      // wp_enqueue_script ( 'jquery-ui-script', '//ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/jquery-ui.min.js',array('jquery'),'',true);
+
+      wp_enqueue_script('jquery');
+      wp_enqueue_script('jquery-ui-core');
+      wp_enqueue_script('jquery-ui-widget');
+      wp_enqueue_script('jquery-ui-progressbar');
+
+      wp_enqueue_script ( 'tmpl-script',  $scriptpath .'tmpl.min.js',array('jquery'),'',true);
+      wp_enqueue_script ( 'load-image-script', $scriptpath .'load-image.min.js',array('jquery'),'',true);
+      wp_enqueue_script ( 'canvas-to-blob-script',$scriptpath . 'canvas-to-blob.min.js',array('jquery'),'',true);
+      wp_enqueue_script ( 'jquery-image-gallery-script',$scriptpath .  'jquery.image-gallery.min.js',array('jquery'),'',true);
       wp_enqueue_script ( 'jquery-iframe-transport-script', $scriptpath . 'jquery.iframe-transport.js',array('jquery'),'',true);
       wp_enqueue_script ( 'jquery-fileupload-script', $scriptpath . 'jquery.fileupload.js',array('jquery'),'',true);
       wp_enqueue_script ( 'jquery-fileupload-fp-script', $scriptpath . 'jquery.fileupload-fp.js',array('jquery'),'',true);
@@ -793,6 +805,7 @@ class Comment_Multi_Image {
        jQuery('#commentform').fileupload({
            url: '<?php print(admin_url('admin-ajax.php'));?>'
               , maxNumberOfFiles: <?php echo $this->limit_images; ?>
+              , autoUpload: true
        });
 
        // Enable iframe cross-domain access via redirect option:
@@ -853,6 +866,7 @@ class Comment_Multi_Image {
    <!-- The file upload form used as target for the file upload widget -->
        <!-- <form id="fileupload" action="<?php print(admin_url().'admin-ajax.php');?>" method="POST" enctype="multipart/form-data"> -->
            <!-- Redirect browsers with JavaScript disabled to the origin page -->
+<div id="comment-multiimages">
           <input type="hidden" name="action" value="load_ajax_function" />
            <!-- The fileupload-buttonbar contains buttons to add/delete files and start/cancel the upload -->
            <div class="row fileupload-buttonbar">
@@ -860,18 +874,18 @@ class Comment_Multi_Image {
                    <!-- The fileinput-button span is used to style the file input field as button -->
                    <span class="btn btn-success fileinput-button">
                        <i class="icon-plus icon-white"></i>
-                       <span>Añadir fotos...</span>
+                       <span>Seleccionar fotos...</span>
                        <input type="file" name="files[]" multiple>
                    </span>
-                   <button type="submit" class="btn btn-primary start">
+                   <button style="display: none" type="submit" class="btn btn-primary start">
                        <i class="icon-upload icon-white"></i>
-                       <span>Subir todo</span>
+                       <span>Enviar todas</span>
                    </button>
-                   <button type="button" class="btn btn-danger delete">
+                   <button style="display: none" type="button" class="btn btn-danger delete">
                        <i class="icon-trash icon-white"></i>
-                       <span>Borrar</span>
+                       <span>Borrar Seleccionadas</span>
                    </button>
-                   <input type="checkbox" class="toggle">
+                   <input style="display: none" type="checkbox" class="toggle">
                </div>
                <!-- The global progress information -->
                <div class="span5 fileupload-progress fade">
@@ -899,6 +913,8 @@ class Comment_Multi_Image {
        Numero máximo de imagenes <?php echo $this->limit_images; ?>
        </div>
 
+</div> <!-- Acaba comment-multiimages -->
+
    <!-- The template to display files available for upload -->
    <script id="template-upload" type="text/x-tmpl">
    {% for (var i=0, file; file=o.files[i]; i++) { %}
@@ -911,10 +927,10 @@ class Comment_Multi_Image {
                <td >
                    <div class="progress progress-success progress-striped active" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="bar" style="width:0%;"></div></div>
                </td>
-               <td class="start" colspan="3">{% if (!o.options.autoUpload) { %}
+               <td style="display: none" class="start" colspan="3">{% if (!o.options.autoUpload) { %}
                    <button class="btn btn-primary">
                        <i class="icon-upload icon-white"></i>
-                       <span>Subir</span>
+                       <span>Enviar</span>
                    </button>
                {% } %}</td>
            {% } else { %}
@@ -923,7 +939,7 @@ class Comment_Multi_Image {
            <td class="cancel">{% if (!i) { %}
                <button class="btn btn-warning">
                    <i class="icon-ban-circle icon-white"></i>
-                   <span>Cancelar</span>
+                   <span>Eliminar</span>
                </button>
            {% } %}</td>
        </tr>
@@ -950,9 +966,9 @@ class Comment_Multi_Image {
            <td class="delete">
                <button class="btn btn-danger" data-type="{%=file.delete_type%}" data-url="{%=file.delete_url%}&action=load_ajax_function"{% if (file.delete_with_credentials) { %} data-xhr-fields='{"withCredentials":true}'{% } %}>
                    <i class="icon-trash icon-white"></i>
-                   <span>Delete</span>
+                   <span>Eliminar</span>
                </button>
-               <input type="checkbox" name="delete" value="1">
+               <input style="display: none" type="checkbox" name="delete" value="1">
            </td>
        </tr>
    {% } %}
