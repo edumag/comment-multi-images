@@ -1,15 +1,15 @@
 <?php
 /*
 Plugin Name: Comment Multi Images
-Plugin URI: http://mamedu.com/
+Plugin URI: http://lesolivex.com/
 Description: Allow your readers easily to attach multi images to their comment.
 Version: 1.0
 Author: Eduardo Magrané
-Author URI: http://mamedu.com
-Author Email: eduardo@mamedu.com
+Author URI: http://lesolivex.com
+Author Email: edu@lesolivex.com
 License:
 
-  Copyright 2012 - 2013 Eduardo Magrané (eduardo@mamedu.com)
+  Copyright 2012 - 2013 Eduardo Magrané (edu@lesolivex.com)
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License, version 2, as 
@@ -272,7 +272,7 @@ class Comment_Multi_Image {
 	  */
 	 public function comment_multi_image( $column_name, $comment_id ) {
 
-      $_SESSION['mamedu_msg'][] = 'Presentando imagen: '; // DEV
+      $_SESSION['lesolivex_msg'][] = 'Presentando imagen: '; // DEV
 		 if( 'comment-multi-images' == strtolower( $column_name ) ) {
 
 			 if( 0 != ( $comment_multi_image_data = get_comment_meta( $comment_id, 'comment_multi_image', true ) ) ) {
@@ -450,7 +450,7 @@ class Comment_Multi_Image {
 
       $imagenes_comentario = glob($upload_dir.'/*');
 
-      $_SESSION['mamedu_msg'][] = 'Guardando imagen de comentario ['.$comment_id.']: '
+      $_SESSION['lesolivex_msg'][] = 'Guardando imagen de comentario ['.$comment_id.']: '
          .' en ['.$upload_dir.'] '
          .print_r($imagenes_comentario,1); // DEV
 
@@ -560,7 +560,7 @@ class Comment_Multi_Image {
                   if ( isset($contenido['post_id']) && (! empty($contenido['post_id']) ) ) 
                      $lista_imagenes .= $contenido['post_id'].',';
 
-                  $_SESSION['mamedu_msg'][] = 'lista: '.print_r($contenido,1);
+                  $_SESSION['lesolivex_msg'][] = 'lista: '.print_r($contenido,1);
 
                   }
                
@@ -574,7 +574,7 @@ class Comment_Multi_Image {
                      </p>
                      ";
                   $comment->comment_content .= $shortcode;
-                  $_SESSION['mamedu_msg'][] = 'shortcode: '.'[gallery gallery columns="5" link="file" include="'.$lista_imagenes.'"]';
+                  $_SESSION['lesolivex_msg'][] = 'shortcode: '.'[gallery gallery columns="5" link="file" include="'.$lista_imagenes.'"]';
                   }
 
 				} // end if
